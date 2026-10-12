@@ -26,23 +26,9 @@ reshaper = arabic_reshaper.ArabicReshaper(configuration={
 })
 
 
-# The game draws the string left-to-right exactly as stored, so paired
-# punctuation must be flipped back after the bidi reordering.
-MIRROR = str.maketrans("()[]{}<>«»", ")(][}{><»«")
-
-
 def convert(text: str, use_bidi: bool) -> str:
     shaped = reshaper.reshape(text)
-    if not use_bidi:
-        return shaped
-    return get_display(shaped).translate(MIRROR)
-
-
-def convert_value(value: str, use_bidi: bool, pad: str) -> str:
-    # The game turns the two literal characters \n into a line break.
-    # Each line is converted on its own so the lines stay in top-to-bottom order.
-    parts = value.split("\\n")
-    return "\\n".join(convert(p.strip(), use_bidi) + pad if p.strip() else p for p in parts)
+    return get_display(shaped) if use_bidi else shaped
 
 
 def main():
@@ -65,7 +51,7 @@ def main():
                 out.append(line)
                 continue
             key, value = line.split("=", 1)   # split on the FIRST '=' only
-            out.append(f"{key}={convert_value(value, not args.no_bidi, pad)}")
+            out.append(f"{key}={convert(value, not args.no_bidi)}{pad}")
 
     with open(args.dst, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(out) + "\n")
